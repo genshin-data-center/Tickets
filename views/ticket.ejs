@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تذكرة #<%= ticket.ticket_id %></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #313338;
+    --sidebar:  #2b2d31;
+    --surface:  #383a40;
+    --border:   #3f4147;
+    --accent:   #5865F2;
+    --green:    #3ba55d;
+    --text:     #dcddde;
+    --muted:    #949ba4;
+    --username-colors: #f47fff, #f0d261, #7ec8e3, #b9f2a1, #ffb347, #87ceeb, #ff9999;
+    --header-bg: #1e1f22;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    background: var(--header-bg);
+    border-bottom: 1px solid rgba(0,0,0,0.3);
+    padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .back-btn {
+    background: rgba(255,255,255,0.08); border: none;
+    color: var(--text); border-radius: 8px;
+    padding: 7px 14px; font-family: inherit; font-size: 13px;
+    cursor: pointer; text-decoration: none; transition: background 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .back-btn:hover { background: rgba(255,255,255,0.15); }
+  .topbar-title { font-size: 16px; font-weight: 600; }
+  .topbar-sub { font-size: 12px; color: var(--muted); }
+  .topbar-info { margin-right: auto; display: flex; align-items: center; gap: 8px; }
+  .topbar-user { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .topbar-avatar { width: 28px; height: 28px; border-radius: 50%; }
+
+  /* ── Layout ── */
+  .layout { display: flex; min-height: calc(100vh - 57px); }
+
+  /* ── Info sidebar ── */
+  .info-sidebar {
+    width: 280px; flex-shrink: 0;
+    background: var(--sidebar);
+    border-left: 1px solid var(--border);
+    padding: 24px 18px;
+    overflow-y: auto;
+    position: sticky; top: 57px; height: calc(100vh - 57px);
+  }
+  .info-section { margin-bottom: 24px; }
+  .info-label {
+    font-size: 10px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1.2px;
+    margin-bottom: 10px;
+  }
+  .info-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .info-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+  .info-name { font-size: 14px; font-weight: 500; }
+  .info-sub { font-size: 11px; color: var(--muted); }
+  .info-value {
+    font-size: 13px; color: var(--text);
+    padding: 6px 10px; background: rgba(0,0,0,0.2);
+    border-radius: 6px; margin-bottom: 8px;
+  }
+  .info-tag {
+    display: inline-block; padding: 3px 10px;
+    border-radius: 12px; font-size: 11px; font-weight: 600;
+    background: rgba(88,101,242,0.25); color: #8fa1ff;
+    border: 1px solid rgba(88,101,242,0.3);
+  }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* ── Chat area ── */
+  .chat {
+    flex: 1; padding: 20px 0;
+    overflow-y: auto;
+  }
+
+  /* ── Message groups — Discord style ── */
+  .msg-group {
+    padding: 2px 16px 2px 72px;
+    position: relative;
+    transition: background 0.05s;
+  }
+  .msg-group:hover { background: rgba(0,0,0,0.06); }
+  .msg-group.first-in-group { padding-top: 16px; }
+
+  .msg-avatar {
+    position: absolute;
+    right: 16px; top: 18px;
+    width: 40px; height: 40px;
+    border-radius: 50%; object-fit: cover;
+    cursor: pointer;
+  }
+  .msg-avatar-placeholder {
+    position: absolute; right: 16px; top: 18px;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; color: var(--text);
+  }
+
+  .msg-header {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 2px;
+  }
+  .msg-username {
+    font-weight: 600; font-size: 15px;
+    cursor: pointer;
+  }
+  .msg-username:hover { text-decoration: underline; }
+  .msg-time {
+    font-size: 11px; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .msg-bot-tag {
+    background: var(--accent); color: white;
+    font-size: 9px; font-weight: 700; padding: 2px 5px;
+    border-radius: 3px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .msg-content { color: var(--text); word-break: break-word; }
+  .msg-content.deleted { color: var(--muted); font-style: italic; }
+
+  .msg-timestamp-only {
+    font-size: 10px; color: transparent;
+    position: absolute; right: 0; top: 50%;
+    transform: translateY(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    padding-right: 4px;
+  }
+  .msg-group:hover .msg-timestamp-only { color: var(--muted); }
+
+  /* ── Images / attachments ── */
+  .msg-attachments { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .msg-image {
+    max-width: 400px; max-height: 300px;
+    border-radius: 8px; cursor: zoom-in;
+    object-fit: contain;
+  }
+  .msg-file {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--sidebar); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px;
+    font-size: 13px; max-width: 400px;
+  }
+  .msg-file a { color: var(--accent); text-decoration: none; }
+  .msg-file a:hover { text-decoration: underline; }
+
+  /* ── System message ── */
+  .msg-system {
+    padding: 6px 16px;
+    font-size: 13px; color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .msg-system::before { content: '—'; opacity: 0.4; }
+
+  /* ── Date divider ── */
+  .date-divider {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 16px 4px;
+    font-size: 12px; color: var(--muted); font-weight: 600;
+  }
+  .date-divider::before, .date-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ── Image lightbox ── */
+  .lightbox {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85); z-index: 999;
+    align-items: center; justify-content: center;
+    cursor: zoom-out;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+  /* ── Code blocks ── */
+  code {
+    background: rgba(0,0,0,0.3); padding: 1px 5px;
+    border-radius: 4px; font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  pre {
+    background: rgba(0,0,0,0.3); padding: 12px;
+    border-radius: 6px; overflow-x: auto;
+    margin-top: 6px; font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <a href="/" class="back-btn">‹ رجوع</a>
+  <div>
+    <div class="topbar-title">🎫 تذكرة #<%= ticket.ticket_id %></div>
+    <div class="topbar-sub"><%= ticket.category || 'بدون قسم' %></div>
+  </div>
+  <div class="topbar-info">
+    <div class="topbar-user">
+      <img src="<%= user.avatar %>" class="topbar-avatar" alt="">
+      <span><%= user.username %></span>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- Info sidebar -->
+  <aside class="info-sidebar">
+
+    <div class="info-section">
+      <div class="info-label">فاتح التذكرة</div>
+      <div class="info-row">
+        <% if (ticket.opened_by_avatar) { %>
+          <img src="<%= ticket.opened_by_avatar %>" class="info-avatar" alt="" onerror="this.style.display='none'">
+        <% } %>
+        <div>
+          <div class="info-name"><%= ticket.opened_by_name || 'غير معروف' %></div>
+          <div class="info-sub"><%= ticket.opened_by_id %></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="info-section">
+      <div class="info-label">تفاصيل التذكرة</div>
+
+      <div class="info-sub" style="margin-bottom:4px;">القسم</div>
+      <div class="info-value"><%= ticket.category || '—' %></div>
+
+      <div class="info-sub" style="margin-bottom:4px;">استلمها</div>
+      <div class="info-value"><%= ticket.claimed_by_name || 'لا أحد' %></div>
+
+      <div class="info-sub" style="margin-bottom:4px;">أغلقها</div>
+      <div class="info-value"><%= ticket.closed_by_name || '—' %></div>
+
+      <% if (ticket.close_reason) { %>
+      <div class="info-sub" style="margin-bottom:4px;">سبب الإغلاق</div>
+      <div class="info-value"><%= ticket.close_reason %></div>
+      <% } %>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="info-section">
+      <div class="info-label">التوقيت</div>
+      <div class="info-sub" style="margin-bottom:4px;">فُتحت</div>
+      <div class="info-value" style="font-family:'JetBrains Mono',monospace;font-size:12px;">
+        <%= ticket.opened_at ? new Date(ticket.opened_at).toLocaleString('ar-SA') : '—' %>
+      </div>
+      <div class="info-sub" style="margin-bottom:4px;">أُغلقت</div>
+      <div class="info-value" style="font-family:'JetBrains Mono',monospace;font-size:12px;">
+        <%= ticket.closed_at ? new Date(ticket.closed_at).toLocaleString('ar-SA') : '—' %>
+      </div>
+      <% if (ticket.opened_at && ticket.closed_at) {
+           const dur = new Date(ticket.closed_at) - new Date(ticket.opened_at);
+           const h = Math.floor(dur/3600000);
+           const m = Math.floor((dur%3600000)/60000);
+      %>
+      <div class="info-sub" style="margin-bottom:4px;">المدة</div>
+      <div class="info-value"><%= h %>س <%= m %>د</div>
+      <% } %>
+    </div>
+
+    <div class="divider"></div>
+    <div class="info-section">
+      <div class="info-label">إجمالي الرسائل</div>
+      <div class="info-value" style="font-family:'JetBrains Mono',monospace;">
+        <%= Array.isArray(ticket.messages) ? ticket.messages.length : 0 %> رسالة
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Chat -->
+  <div class="chat" id="chat">
+    <%
+      const messages = Array.isArray(ticket.messages) ? ticket.messages : [];
+      const userColors = {};
+      const palette = ['#f47fff','#f0d261','#7ec8e3','#b9f2a1','#ffb347','#87ceeb','#ff9999','#c8b2ff','#aff4c6'];
+      let colorIdx = 0;
+      function getColor(uid) {
+        if (!userColors[uid]) { userColors[uid] = palette[colorIdx++ % palette.length]; }
+        return userColors[uid];
+      }
+
+      let lastDate = null;
+      let lastAuthorId = null;
+      let lastTime = null;
+
+      messages.forEach((msg, i) => {
+        const date    = new Date(msg.timestamp);
+        const dateKey = date.toDateString();
+        const isBot   = msg.isBot;
+        const sameAuthor = lastAuthorId === msg.authorId;
+        const recentMsg  = lastTime && (date - lastTime) < 5 * 60 * 1000;
+        const grouped    = sameAuthor && recentMsg && !isBot;
+    %>
+
+    <% if (dateKey !== lastDate) {
+         lastDate = dateKey;
+         lastAuthorId = null;
+    %>
+    <div class="date-divider">
+      <%= date.toLocaleDateString('ar-SA', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) %>
+    </div>
+    <% } %>
+
+    <% if (msg.type === 'system') { %>
+      <div class="msg-system"><%= msg.content %></div>
+    <% } else { %>
+    <div class="msg-group <%= !grouped ? 'first-in-group' : '' %>">
+      <% if (!grouped) { %>
+        <% if (msg.authorAvatar) { %>
+          <img class="msg-avatar" src="<%= msg.authorAvatar %>" alt=""
+               onerror="this.style.display='none'">
+        <% } else { %>
+          <div class="msg-avatar-placeholder" style="color:<%= getColor(msg.authorId) %>">
+            <%= (msg.authorName || '?')[0].toUpperCase() %>
+          </div>
+        <% } %>
+        <div class="msg-header">
+          <span class="msg-username" style="color:<%= getColor(msg.authorId) %>">
+            <%= msg.authorName || 'Unknown' %>
+          </span>
+          <% if (isBot) { %><span class="msg-bot-tag">BOT</span><% } %>
+          <span class="msg-time">
+            <%= date.toLocaleTimeString('ar-SA', { hour:'2-digit', minute:'2-digit' }) %>
+          </span>
+        </div>
+      <% } else { %>
+        <span class="msg-timestamp-only">
+          <%= date.toLocaleTimeString('ar-SA', { hour:'2-digit', minute:'2-digit' }) %>
+        </span>
+      <% } %>
+
+      <% if (msg.content) { %>
+        <div class="msg-content"><%= msg.content.replace(/</g,'&lt;').replace(/>/g,'&gt;') %></div>
+      <% } %>
+
+      <% if (msg.attachments && msg.attachments.length) { %>
+        <div class="msg-attachments">
+          <% msg.attachments.forEach(att => { %>
+            <% if (att.contentType && att.contentType.startsWith('image/')) { %>
+              <img class="msg-image" src="<%= att.url %>" alt="<%= att.name %>"
+                   onclick="openLightbox('<%= att.url %>')"
+                   onerror="this.outerHTML='<div class=msg-file>🖼️ <%= att.name %> (صورة غير متاحة)</div>'">
+            <% } else { %>
+              <div class="msg-file">
+                📎 <a href="<%= att.url %>" target="_blank"><%= att.name %></a>
+                <span style="color:var(--muted);font-size:12px;">
+                  (<%= att.size ? Math.round(att.size/1024) + ' KB' : '' %>)
+                </span>
+              </div>
+            <% } %>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+    <% } %>
+
+    <% lastAuthorId = msg.authorId; lastTime = date; }) %>
+
+    <!-- Closed banner -->
+    <div class="date-divider" style="color:#ed4245;">
+      🔒 تم إغلاق التذكرة — <%= ticket.closed_at ? new Date(ticket.closed_at).toLocaleString('ar-SA') : '' %>
+    </div>
+
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script>
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+// Scroll to bottom on load
+window.addEventListener('load', () => {
+  const chat = document.getElementById('chat');
+  chat.scrollTop = chat.scrollHeight;
+});
+</script>
+</body>
+</html>

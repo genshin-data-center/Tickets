@@ -1,0 +1,28 @@
+# ── Supabase ──────────────────────────────────────────────────────
+# From: Supabase project → Settings → Database → Connection string → URI
+# Make sure to replace [YOUR-PASSWORD] with your actual password
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.xxxxxxxxxxxx.supabase.co:5432/postgres
+
+# ── Sessions ──────────────────────────────────────────────────────
+# Generate at: https://generate-secret.vercel.app/64
+SESSION_SECRET=paste-a-long-random-string-here
+
+# ── Discord OAuth2 ────────────────────────────────────────────────
+# From: discord.com/developers → your app → OAuth2
+DISCORD_CLIENT_ID=your_application_id
+DISCORD_CLIENT_SECRET=your_oauth2_client_secret
+
+# Your Discord server ID (right-click server → Copy Server ID)
+DISCORD_GUILD_ID=your_guild_id
+
+# Role IDs who can access the dashboard — comma-separated, NO spaces
+# Include your مشرف role ID(s)
+ALLOWED_ROLE_IDS=111111111111111111,222222222222222222
+
+# Your Vercel app URL + /auth/callback
+# Set this AFTER deploying to Vercel
+REDIRECT_URI=https://your-project.vercel.app/auth/callback
+
+# ── Shared secret between bot and dashboard ───────────────────────
+# Make up any long random string — paste the SAME value in your bot's env too
+INTERNAL_API_KEY=make-this-long-and-random-like-a-password
